@@ -118,7 +118,10 @@ type SimWindow = 'none'|'files'|'calculator'|'settings'|'software'|'updates'|'mo
 let simActive = false;
 let simMenu = false;
 let simWindow: SimWindow = 'none';
-let simFolder: 'Personnel'|'Documents'|'Images'|'Téléchargements' = 'Personnel';
+let simFolder: SimFolder = 'Personnel';
+type SimFolder = 'Personnel'|'Documents'|'Images'|'Téléchargements';
+let simHistory: SimFolder[] = ['Personnel'];
+let simHistoryIndex = 0;
 let simPanelMinimized = false;
 let simNetworkOpen = false;
 let simContextMenu = false;
@@ -128,6 +131,7 @@ let simFeedback = 'Choisis un élément dans le bureau simulé.';
 /** Remet les seules données de simulation à leur valeur initiale. */
 function resetSimulation(): void {
   simMenu=false;simWindow='none';simFolder='Personnel';simPanelMinimized=false;
+  simHistory=['Personnel'];simHistoryIndex=0;
   simNetworkOpen=false;simContextMenu=false;simSearch='';simFeedback='Choisis un élément dans le bureau simulé.';
 }
 
@@ -222,12 +226,36 @@ function demoWindow(topic:string,stage:number):string {
   return `<div class="mint-window" aria-hidden="true"><div class="mint-window-head"><span>${esc(title)}</span><span>−　□　×</span></div><div class="mint-window-body"><div class="mint-window-nav">Personnel<br>Documents<br>Images<br>Téléchargements<br>Corbeille</div><div class="mint-window-folders ${active}">${cells}</div></div></div>`;
 }
 
+/** Navigue uniquement dans les dossiers prédéfinis de la simulation. */
+function navigateSimFolder(folder:SimFolder):void {
+  if(folder===simFolder)return;
+  simHistory=simHistory.slice(0,simHistoryIndex+1);
+  simHistory.push(folder);
+  simHistoryIndex=simHistory.length-1;
+  simFolder=folder;
+}
+
+/** Parcourt l'historique fictif sans modifier les fichiers réels. */
+function moveSimHistory(direction:-1|1):void {
+  const next=simHistoryIndex+direction;
+  if(next<0||next>=simHistory.length)return;
+  simHistoryIndex=next;
+  simFolder=simHistory[next];
+  simFeedback=`Retour vers ${simFolder} dans la simulation.`;
+}
+
 /** Dessine la fenêtre Nemo fictive et ses dossiers, sans lire le disque de l'utilisateur. */
 function simulatedFiles(): string {
   const folders = ['Documents','Images','Téléchargements'] as const;
   const listing=simFolder==='Personnel'?folders.map(f=>`<button type="button" class="sim-folder" data-sim="folder:${f}">▣ ${f}</button>`).join(''):
     `<div class="sim-placeholder">${esc(simFolder)} est vide dans cet exemple.<small>Aucun fichier réel n'est affiché.</small></div>`;
   return `<div class="sim-window" aria-label="Nemo fictif"><div class="sim-titlebar"><strong>Nemo — ${esc(simFolder)}</strong><button type="button" data-sim="minimize" aria-label="Réduire la fenêtre">−</button><button type="button" data-sim="close" aria-label="Fermer la fenêtre">×</button></div>
+    <div class="sim-file-toolbar" role="group" aria-label="Navigation fictive">
+      <button type="button" data-sim="history-back" ${simHistoryIndex===0?'disabled':''} aria-label="Dossier précédent">←</button>
+      <button type="button" data-sim="history-forward" ${simHistoryIndex===simHistory.length-1?'disabled':''} aria-label="Dossier suivant">→</button>
+      <button type="button" data-sim="folder:Personnel" ${simFolder==='Personnel'?'disabled':''} aria-label="Dossier parent">↑</button>
+      <span aria-label="Emplacement fictif">Personnel / ${esc(simFolder)}</span>
+    </div>
     <div class="sim-window-body"><nav class="sim-sidebar" aria-label="Dossiers fictifs"><button data-sim="folder:Personnel">⌂ Personnel</button>${folders.map(f=>`<button type="button" data-sim="folder:${f}" aria-current="${simFolder===f?'page':'false'}">${f}</button>`).join('')}</nav><div class="sim-file-list">${listing}</div></div></div>`;
 }
 
@@ -265,6 +293,14 @@ function interactiveDesktop(): string {
 /** Applique uniquement des transitions à la maquette en mémoire, sans pont Python. */
 function handleSimulation(action:string):void {
   if(action==='reset'){resetSimulation();return;}
+  if(action==='history-back'){
+    moveSimHistory(-1);
+    return;
+  }
+  if(action==='history-forward'){
+    moveSimHistory(1);
+    return;
+  }
   if(action==='context-open'){
     simContextMenu=true;
     simMenu=false;
@@ -285,7 +321,7 @@ function handleSimulation(action:string):void {
   if(action.startsWith('folder:')){
     const folder=action.slice(7);
     if(['Personnel','Documents','Images','Téléchargements'].includes(folder)){
-      simWindow='files';simFolder=folder as typeof simFolder;simPanelMinimized=false;simMenu=false;simFeedback=`Dossier ${folder} affiché dans la simulation.`;
+      simWindow='files';navigateSimFolder(folder as SimFolder);simPanelMinimized=false;simMenu=false;simFeedback=`Dossier ${folder} affiché dans la simulation.`;
     }
     return;
   }
@@ -294,7 +330,11 @@ function handleSimulation(action:string):void {
     const app=action.slice(5);
     if(['files','calculator','settings','software','updates','monitor'].includes(app)){
       simWindow=app as SimWindow;simPanelMinimized=false;simMenu=false;
-      if(app==='files')simFolder='Personnel';
+      if(app==='files'){
+        simFolder='Personnel';
+        simHistory=['Personnel'];
+        simHistoryIndex=0;
+      }
       simFeedback='Application fictive ouverte. Tu peux explorer ses éléments.';
     }
     return;

@@ -91,6 +91,8 @@ let simActive = false;
 let simMenu = false;
 let simWindow = 'none';
 let simFolder = 'Personnel';
+let simHistory = ['Personnel'];
+let simHistoryIndex = 0;
 let simPanelMinimized = false;
 let simNetworkOpen = false;
 let simContextMenu = false;
@@ -102,6 +104,8 @@ function resetSimulation() {
     simWindow = 'none';
     simFolder = 'Personnel';
     simPanelMinimized = false;
+    simHistory = ['Personnel'];
+    simHistoryIndex = 0;
     simNetworkOpen = false;
     simContextMenu = false;
     simSearch = '';
@@ -189,12 +193,36 @@ function demoWindow(topic, stage) {
     const cells = rows.map(([label, selected]) => `<div class="mint-file-entry ${selected ? 'demo-selected' : ''}"><span aria-hidden="true">${topic === 'files' ? '▣' : '◻'}</span>${esc(label)}</div>`).join('');
     return `<div class="mint-window" aria-hidden="true"><div class="mint-window-head"><span>${esc(title)}</span><span>−　□　×</span></div><div class="mint-window-body"><div class="mint-window-nav">Personnel<br>Documents<br>Images<br>Téléchargements<br>Corbeille</div><div class="mint-window-folders ${active}">${cells}</div></div></div>`;
 }
+/** Navigue uniquement dans les dossiers prédéfinis de la simulation. */
+function navigateSimFolder(folder) {
+    if (folder === simFolder)
+        return;
+    simHistory = simHistory.slice(0, simHistoryIndex + 1);
+    simHistory.push(folder);
+    simHistoryIndex = simHistory.length - 1;
+    simFolder = folder;
+}
+/** Parcourt l'historique fictif sans modifier les fichiers réels. */
+function moveSimHistory(direction) {
+    const next = simHistoryIndex + direction;
+    if (next < 0 || next >= simHistory.length)
+        return;
+    simHistoryIndex = next;
+    simFolder = simHistory[next];
+    simFeedback = `Retour vers ${simFolder} dans la simulation.`;
+}
 /** Dessine la fenêtre Nemo fictive et ses dossiers, sans lire le disque de l'utilisateur. */
 function simulatedFiles() {
     const folders = ['Documents', 'Images', 'Téléchargements'];
     const listing = simFolder === 'Personnel' ? folders.map(f => `<button type="button" class="sim-folder" data-sim="folder:${f}">▣ ${f}</button>`).join('') :
         `<div class="sim-placeholder">${esc(simFolder)} est vide dans cet exemple.<small>Aucun fichier réel n'est affiché.</small></div>`;
     return `<div class="sim-window" aria-label="Nemo fictif"><div class="sim-titlebar"><strong>Nemo — ${esc(simFolder)}</strong><button type="button" data-sim="minimize" aria-label="Réduire la fenêtre">−</button><button type="button" data-sim="close" aria-label="Fermer la fenêtre">×</button></div>
+    <div class="sim-file-toolbar" role="group" aria-label="Navigation fictive">
+      <button type="button" data-sim="history-back" ${simHistoryIndex === 0 ? 'disabled' : ''} aria-label="Dossier précédent">←</button>
+      <button type="button" data-sim="history-forward" ${simHistoryIndex === simHistory.length - 1 ? 'disabled' : ''} aria-label="Dossier suivant">→</button>
+      <button type="button" data-sim="folder:Personnel" ${simFolder === 'Personnel' ? 'disabled' : ''} aria-label="Dossier parent">↑</button>
+      <span aria-label="Emplacement fictif">Personnel / ${esc(simFolder)}</span>
+    </div>
     <div class="sim-window-body"><nav class="sim-sidebar" aria-label="Dossiers fictifs"><button data-sim="folder:Personnel">⌂ Personnel</button>${folders.map(f => `<button type="button" data-sim="folder:${f}" aria-current="${simFolder === f ? 'page' : 'false'}">${f}</button>`).join('')}</nav><div class="sim-file-list">${listing}</div></div></div>`;
 }
 /** Produit le contenu d'une application illustrative, distinct des logiciels réels. */
@@ -231,6 +259,14 @@ function interactiveDesktop() {
 function handleSimulation(action) {
     if (action === 'reset') {
         resetSimulation();
+        return;
+    }
+    if (action === 'history-back') {
+        moveSimHistory(-1);
+        return;
+    }
+    if (action === 'history-forward') {
+        moveSimHistory(1);
         return;
     }
     if (action === 'context-open') {
@@ -279,7 +315,7 @@ function handleSimulation(action) {
         const folder = action.slice(7);
         if (['Personnel', 'Documents', 'Images', 'Téléchargements'].includes(folder)) {
             simWindow = 'files';
-            simFolder = folder;
+            navigateSimFolder(folder);
             simPanelMinimized = false;
             simMenu = false;
             simFeedback = `Dossier ${folder} affiché dans la simulation.`;
@@ -293,8 +329,11 @@ function handleSimulation(action) {
             simWindow = app;
             simPanelMinimized = false;
             simMenu = false;
-            if (app === 'files')
+            if (app === 'files') {
                 simFolder = 'Personnel';
+                simHistory = ['Personnel'];
+                simHistoryIndex = 0;
+            }
             simFeedback = 'Application fictive ouverte. Tu peux explorer ses éléments.';
         }
         return;
