@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=PixelProwlers LIBRE Companion
+GenericName=Assistant de confidentialité
+Comment=Configurez vos services numériques sans compte imposé
+Exec=/usr/bin/pixelprowlers-libre
+Icon=preferences-system-privacy
+Terminal=false
+Categories=Settings;Utility;
+StartupNotify=true

@@ -1,0 +1,33 @@
+name: CI — PixelProwlers LIBRE Companion
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Installer TypeScript
+        run: npm install --no-save --no-package-lock typescript@5.9.3
+      - name: Vérifier TypeScript strict
+        run: ./node_modules/.bin/tsc -p tsconfig.json
+      - name: Exécuter les tests Python
+        run: python3 -m unittest discover -s tests -v
+      - name: Vérifier la syntaxe Python
+        run: python3 -m py_compile packaging/companion.py
+      - name: Construire le paquet Debian
+        run: bash packaging/build-deb.sh
+      - name: Inspecter le paquet Debian
+        run: dpkg-deb --contents dist/*.deb
+      - name: Archiver les artefacts de test
+        uses: actions/upload-artifact@v4
+        with:
+          name: libre-companion-deb
+          path: |
+            dist/*.deb
+            dist/*.sha256

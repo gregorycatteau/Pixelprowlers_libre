@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Bienvenue PixelProwlers LIBRE
+Comment=Assistant facultatif de première connexion
+Exec=/usr/bin/pixelprowlers-libre --first-run
+Icon=preferences-system-privacy
+Terminal=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true

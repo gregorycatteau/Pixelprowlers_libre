@@ -1,0 +1,23 @@
+#!/bin/sh
+# Helper administrateur : aucun nom de paquet fourni librement n'est accepté.
+set -eu
+[ "$(id -u)" -eq 0 ] || exit 77
+[ "$#" -eq 1 ] || exit 64
+case "$1" in
+    firefox) PACKAGE=firefox ;;
+    thunderbird) PACKAGE=thunderbird ;;
+    keepassxc) PACKAGE=keepassxc ;;
+    deja-dup) PACKAGE=deja-dup ;;
+    pdfarranger) PACKAGE=pdfarranger ;;
+    nextcloud-desktop) PACKAGE=nextcloud-desktop ;;
+    simple-scan) PACKAGE=simple-scan ;;
+    libreoffice) PACKAGE=libreoffice-writer ;;
+    vlc) PACKAGE=vlc ;;
+    syncthing) PACKAGE=syncthing ;;
+    *) printf 'Action interdite\n' >&2; exit 64 ;;
+esac
+# L'administrateur approuve l'installation via polkit, pas via le WebView.
+# Aucun sh -c, aucun paramètre utilisateur ajouté à APT.
+export DEBIAN_FRONTEND=noninteractive
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+exec /usr/bin/apt-get install -y --no-install-recommends -- "$PACKAGE"

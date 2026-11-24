@@ -1,0 +1,3 @@
+#!/bin/sh
+# Force Python système pour garantir les modules GTK fournis par la distribution.
+exec /usr/bin/python3 /usr/lib/pixelprowlers-libre/companion.py "$@"

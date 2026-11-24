@@ -1,0 +1,17 @@
+Commande: python3 -m unittest discover -s tests -v
+
+test_apps_are_allowlisted (test_security.CompanionSecurityTests.test_apps_are_allowlisted)
+Aucune application externe ne peut être lancée par un nom arbitraire. ... ok
+test_block_unknown_action (test_security.CompanionSecurityTests.test_block_unknown_action)
+Une action arbitraire doit toujours être refusée. ... ok
+test_clean_state_no_sensitive_fields (test_security.CompanionSecurityTests.test_clean_state_no_sensitive_fields)
+Un identifiant ou un mot de passe ajouté au JSON doit être rejeté. ... ok
+test_guides_are_allowlisted (test_security.CompanionSecurityTests.test_guides_are_allowlisted)
+Aucune lecture de fichier arbitraire depuis l'interface. ... ok
+test_state_file_permissions (test_security.CompanionSecurityTests.test_state_file_permissions)
+La configuration doit rester locale et privée. ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.004s
+
+OK
