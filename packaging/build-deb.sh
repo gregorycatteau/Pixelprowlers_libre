@@ -2,7 +2,7 @@
 # Construire le paquet installable PixelProwlers LIBRE sans privilèges administrateur.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION='1.4.0'
+VERSION='1.5.0'
 STAGE="${ROOT}/dist/pkg-root"
 OUTPUT="${ROOT}/dist/PixelProwlers-LIBRE-Companion_${VERSION}_all.deb"
 rm -rf -- "$STAGE"
@@ -23,7 +23,7 @@ install -m 0644 "$ROOT/packaging/pixelprowlers-libre-first-run.desktop" \
 chmod 0755 "$STAGE/DEBIAN"
 cat > "$STAGE/DEBIAN/control" <<'CONTROL'
 Package: pixelprowlers-libre-companion
-Version: 1.4.0
+Version: 1.5.0
 Section: utils
 Priority: optional
 Architecture: all
