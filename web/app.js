@@ -833,7 +833,27 @@ function wireEvents() {
         draw();
     });
     document.addEventListener('keydown', event => {
-        if (event.key !== 'Escape' || discoveryDepth !== 3 || !simActive)
+        if (discoveryDepth !== 3 || !simActive)
+            return;
+        // Les raccourcis de Nemo restent confinés à son bureau fictif.
+        if (event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey
+            && ['ArrowLeft', 'ArrowRight', 'ArrowUp'].includes(event.key)) {
+            const target = event.target;
+            const editable = target?.closest?.('input, textarea, select, [contenteditable="true"]');
+            const insideDesktop = target?.closest?.('.sim-desktop');
+            if (!editable && insideDesktop && simWindow === 'files' && !simPanelMinimized) {
+                event.preventDefault();
+                if (event.key === 'ArrowLeft')
+                    handleSimulation('history-back');
+                if (event.key === 'ArrowRight')
+                    handleSimulation('history-forward');
+                if (event.key === 'ArrowUp')
+                    handleSimulation('folder:Personnel');
+                draw();
+            }
+            return;
+        }
+        if (event.key !== 'Escape')
             return;
         if (simContextMenu) {
             handleSimulation('context-close');
