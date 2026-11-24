@@ -121,13 +121,14 @@ let simWindow: SimWindow = 'none';
 let simFolder: 'Personnel'|'Documents'|'Images'|'Téléchargements' = 'Personnel';
 let simPanelMinimized = false;
 let simNetworkOpen = false;
+let simContextMenu = false;
 let simSearch = '';
 let simFeedback = 'Choisis un élément dans le bureau simulé.';
 
 /** Remet les seules données de simulation à leur valeur initiale. */
 function resetSimulation(): void {
   simMenu=false;simWindow='none';simFolder='Personnel';simPanelMinimized=false;
-  simNetworkOpen=false;simSearch='';simFeedback='Choisis un élément dans le bureau simulé.';
+  simNetworkOpen=false;simContextMenu=false;simSearch='';simFeedback='Choisis un élément dans le bureau simulé.';
 }
 
 
@@ -251,6 +252,11 @@ function interactiveDesktop(): string {
     <button type="button" class="sim-desktop-shortcut" data-sim="open:files">▣<span>Dossier personnel</span></button>
     ${simWindow!=='none'&&!simPanelMinimized?simulatedApplication():''}
     ${simMenu?`<div class="sim-menu" role="group" aria-label="Menu Cinnamon fictif"><label class="sim-search-label" for="sim-app-search">Rechercher une application</label><input id="sim-app-search" data-sim-search type="search" value="${esc(simSearch)}" placeholder="Calculatrice, Fichiers…" autocomplete="off"><div id="sim-search-results" class="sim-results">${searchResults.length?searchResults.map(name=>`<button type="button" data-sim="open:${appIds[name]}">${esc(name)}</button>`).join(''):'<span>Aucun résultat</span>'}</div></div>`:''}
+    ${simContextMenu?`<div class="sim-context-menu" role="menu" aria-label="Menu contextuel fictif">
+      <button type="button" role="menuitem" data-sim="open:files">Ouvrir Fichiers</button>
+      <button type="button" role="menuitem" data-sim="open:settings">Paramètres du bureau</button>
+      <button type="button" role="menuitem" data-sim="context-close">Fermer ce menu</button>
+    </div>`:''}
     ${simNetworkOpen?`<div class="sim-network"><strong>Réseau (fictif)</strong><p>Wi-Fi de démonstration</p><small>Aucune connexion réelle.</small></div>`:''}
   </div><div class="sim-taskbar"><button type="button" data-sim="menu" aria-expanded="${simMenu}">☰ Menu</button><button type="button" data-sim="open:files">▣ Fichiers</button>${simWindow!=='none'?`<button type="button" data-sim="restore" aria-label="${simPanelMinimized?'Restaurer':'Réduire'} ${esc(simWindow)}">${simPanelMinimized?'▢ Restaurer':'▣ Fenêtre'}</button>`:''}<button type="button" data-sim="network" aria-expanded="${simNetworkOpen}">⌁ Réseau</button></div>
     <div class="sim-feedback" role="status" aria-live="polite">${esc(simFeedback)}</div></div>`;
@@ -259,8 +265,20 @@ function interactiveDesktop(): string {
 /** Applique uniquement des transitions à la maquette en mémoire, sans pont Python. */
 function handleSimulation(action:string):void {
   if(action==='reset'){resetSimulation();return;}
-  if(action==='menu'){simMenu=!simMenu;simNetworkOpen=false;simFeedback=simMenu?'Menu ouvert : choisis une application.':'Menu fermé.';return;}
-  if(action==='network'){simNetworkOpen=!simNetworkOpen;simMenu=false;simFeedback='Le réseau présenté est fictif.';return;}
+  if(action==='context-open'){
+    simContextMenu=true;
+    simMenu=false;
+    simNetworkOpen=false;
+    simFeedback='Menu contextuel ouvert dans la simulation.';
+    return;
+  }
+  if(action==='context-close'){
+    simContextMenu=false;
+    simFeedback='Menu contextuel fermé.';
+    return;
+  }
+  if(action==='menu'){simContextMenu=false;simMenu=!simMenu;simNetworkOpen=false;simFeedback=simMenu?'Menu ouvert : choisis une application.':'Menu fermé.';return;}
+  if(action==='network'){simContextMenu=false;simNetworkOpen=!simNetworkOpen;simMenu=false;simFeedback='Le réseau présenté est fictif.';return;}
   if(action==='close'){simWindow='none';simPanelMinimized=false;simFeedback='Fenêtre fermée.';return;}
   if(action==='minimize'){simPanelMinimized=true;simFeedback='Fenêtre réduite : elle reste accessible depuis le panneau.';return;}
   if(action==='restore'){simPanelMinimized=!simPanelMinimized;simFeedback=simPanelMinimized?'Fenêtre réduite.':'Fenêtre restaurée.';return;}
@@ -272,6 +290,7 @@ function handleSimulation(action:string):void {
     return;
   }
   if(action.startsWith('open:')){
+    simContextMenu=false;
     const app=action.slice(5);
     if(['files','calculator','settings','software','updates','monitor'].includes(app)){
       simWindow=app as SimWindow;simPanelMinimized=false;simMenu=false;
@@ -613,6 +632,27 @@ function wireEvents():void{
       if(wizardIndex===MODULES.length-1){await finish()}else{wizardIndex++;draw()}
     }
     if(action==='back'){wizardIndex=Math.max(0,wizardIndex-1);draw()}
+  });
+  document.addEventListener('contextmenu',event=>{
+    const target=event.target as HTMLElement;
+    if(discoveryDepth!==3 || !simActive || !target.closest('.sim-wallpaper'))return;
+    event.preventDefault();
+    handleSimulation('context-open');
+    draw();
+  });
+  document.addEventListener('keydown',event=>{
+    if(event.key!=='Escape' || discoveryDepth!==3 || !simActive)return;
+    if(simContextMenu){
+      handleSimulation('context-close');
+    }else if(simMenu){
+      handleSimulation('menu');
+    }else if(simNetworkOpen){
+      handleSimulation('network');
+    }else{
+      return;
+    }
+    event.preventDefault();
+    draw();
   });
   document.addEventListener('input',event=>{
     const input=event.target as HTMLInputElement;

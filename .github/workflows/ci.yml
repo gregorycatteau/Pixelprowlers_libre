@@ -16,6 +16,8 @@ jobs:
         run: npm install --no-save --no-package-lock typescript@5.9.3
       - name: Vérifier TypeScript strict
         run: ./node_modules/.bin/tsc -p tsconfig.json
+      - name: Exécuter les tests JavaScript
+        run: node --test tests/*.cjs
       - name: Exécuter les tests Python
         run: python3 -m unittest discover -s tests -v
       - name: Vérifier la syntaxe Python
